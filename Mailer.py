@@ -102,7 +102,7 @@ def main():
 
         for row in csv_reader:
             first_name, last_name, to_email, carbon_copy = row
-            subject = f'[Automated] {first_name}, SFTP server has new files for you'
+            subject = f'Hello {first_name}, this is a test message!'
 
             body_vars = (first_name, last_name, to_email)
 
