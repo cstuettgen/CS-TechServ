@@ -1,5 +1,6 @@
 import pathlib
 import smtplib
+from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
@@ -21,6 +22,7 @@ class Mailer:
         self.smtp_password = smtp_password
         self.compose_mail()
         self.embed_pics()
+        self.attachments()
 
     def compose_mail(self):
         msg = MIMEMultipart('related')
@@ -67,6 +69,15 @@ class Mailer:
             self.msg.attach(image)
             i = i + 1
 
+    def attachments(self):
+        attachment_dir = r'Attachments/'
+        attachments = os.listdir(attachment_dir)
+        for file in attachments:
+            extension = pathlib.Path(file).suffix
+            attachment = MIMEApplication(open(f'{attachment_dir}{file}', 'rb').read())
+            attachment.add_header('Content-Disposition', 'attachment', filename=file)
+            self.msg.attach(attachment)
+
     def send_mail(self):
         with smtplib.SMTP('smtp.office365.com', 587) as smtp:
             smtp.ehlo()
@@ -102,7 +113,7 @@ def main():
 
         for row in csv_reader:
             first_name, last_name, to_email, carbon_copy = row
-            subject = f'Hello {first_name}, this is a test message!'
+            subject = f'Hello {first_name}, This is a test message'
 
             body_vars = (first_name, last_name, to_email)
 
@@ -113,3 +124,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
