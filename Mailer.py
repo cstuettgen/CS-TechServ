@@ -8,6 +8,8 @@ import os
 import csv
 
 """*******************************************************************************************
+Instructions:
+
 Add Mailer.py to same directory as your code.
 
 Copy 'def notify():' method to the code you are running.
