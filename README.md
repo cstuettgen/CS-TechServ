@@ -11,8 +11,8 @@ Add HTML email body to 'Email_Message' and title it 'email.html'.
 
 Images to be embedded will be labeled in alphabetical order starting with index0.
 Add images to your HTML email body, 'email.html'
-    Ex.| <img width=469 height=263  src="cid:image0">
-       | <img width=469 height=263  src="cid:image1">
+    'Ex.| <img width=469 height=263  src="cid:image0">'
+    '   | <img width=469 height=263  src="cid:image1">'
 
 Create credentials.txt in 'Config' folder and label creds that will be sending the email 
 with Email: and Password: on separate lines.
