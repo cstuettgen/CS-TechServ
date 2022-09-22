@@ -147,10 +147,10 @@ def notify():
         for row in csv_reader:
             first_name, last_name, to_email, carbon_copy = row
 
-            # *** edit subject and add variables for email body in order of appearance in your HTML email message
+            # ---edit subject and add variables for email body in order of appearance in your HTML email message--
             subject = f'Hello {first_name}, this is a test message'
             body_vars = (first_name, last_name, to_email)
-            # ---------------------------------------------------------------------------------------------------
+            # ----------------------------------------------------------------------------------------------------
 
             email = Mailer(first_name, last_name, to_email, subject, carbon_copy,
                            from_email_address, smtp_password, body_vars)
