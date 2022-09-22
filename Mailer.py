@@ -7,6 +7,36 @@ from email.mime.image import MIMEImage
 import os
 import csv
 
+"""*******************************************************************************************
+Add Mailer.py to same directory as your code.
+
+Copy 'def notify():' method to the code you are running.
+    modify the subject and body-vars to match your subject 
+    and order of variables in the body of of your HTML email body.
+
+Create folders 'Config', 'Attachments', 'Email_Message', 'Images'.
+
+Add HTML email body to 'Email_Message' and title it 'email.html'.
+
+Images to be embedded will be labeled in alphabetical order starting with index0.
+Add images to your HTML email body, 'email.html'
+    Ex.| <img width=469 height=263  src="cid:image0">
+       | <img width=469 height=263  src="cid:image1">
+
+Create credentials.txt in 'Config' folder and label creds that will be sending the email 
+with Email: and Password: on separate lines.
+    Ex.| Email:  john.doe@wherever.net
+       | Password:  ***********
+
+Create 'recipients.csv' and place it in the 'Config' folder.
+    Add this header to file: 'first_name,last_name,to_email,carbon_copy'.
+    Begin adding recipients on line 2 of csv.
+
+Add any files to be attached to the 'Attachments' folder.
+
+Add 'notify()' to your processes.
+**********************************************************************************************"""
+
 
 class Mailer:
     def __init__(self, first_name, last_name, to_email, subject, carbon_copy, from_email_address,
@@ -31,7 +61,7 @@ class Mailer:
         msg['To'] = self.to_email
         msg['cc'] = self.carbon_copy
 
-        path = "email_message/email.html"
+        path = "Email_Message/email.html"
 
         with open(path, encoding='utf-8') as f:
             if self.body_vars is not None:
@@ -72,8 +102,7 @@ class Mailer:
     def attachments(self):
         attachment_dir = r'Attachments/'
         attachments = os.listdir(attachment_dir)
-        for file in attachments:
-            extension = pathlib.Path(file).suffix
+        for file in attachments:            
             attachment = MIMEApplication(open(f'{attachment_dir}{file}', 'rb').read())
             attachment.add_header('Content-Disposition', 'attachment', filename=file)
             self.msg.attach(attachment)
@@ -87,7 +116,7 @@ class Mailer:
             smtp.send_message(self.msg)
 
 
-def main():
+def notify():
 
     from_email_address = None
     smtp_password = None
@@ -113,15 +142,21 @@ def main():
 
         for row in csv_reader:
             first_name, last_name, to_email, carbon_copy = row
-            subject = f'Hello {first_name}, This is a test message'
 
+            # *** edit subject and add variables for email body in order of appearance in your HTML email message
+            subject = f'Hello {first_name}, this is a test message'
             body_vars = (first_name, last_name, to_email)
+            # ---------------------------------------------------------------------------------------------------
 
-            test = Mailer(first_name, last_name, to_email, subject, carbon_copy,
-                          from_email_address, smtp_password, body_vars)
-            test.send_mail()
+            email = Mailer(first_name, last_name, to_email, subject, carbon_copy,
+                           from_email_address, smtp_password, body_vars)
+
+            email.send_mail()
+
+
+def main():
+    notify()
 
 
 if __name__ == '__main__':
     main()
-
