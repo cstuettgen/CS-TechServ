@@ -8,8 +8,6 @@ import os
 import csv
 
 """*******************************************************************************************
-Instructions:
-
 Add Mailer.py to same directory as your code.
 
 Copy 'def notify():' method to the code you are running.
@@ -104,10 +102,14 @@ class Mailer:
     def attachments(self):
         attachment_dir = r'Attachments/'
         attachments = os.listdir(attachment_dir)
-        for file in attachments:            
-            attachment = MIMEApplication(open(f'{attachment_dir}{file}', 'rb').read())
-            attachment.add_header('Content-Disposition', 'attachment', filename=file)
-            self.msg.attach(attachment)
+        print(attachments)
+        for file in attachments:
+            print(file)
+            if os.path.isfile(f'{attachment_dir}{file}') is True:
+                attachment = MIMEApplication(open(f'{attachment_dir}{file}', 'rb').read())
+                attachment.add_header('Content-Disposition', 'attachment', filename=file)
+                self.msg.attach(attachment)
+                print(attachment)
 
     def send_mail(self):
         with smtplib.SMTP('smtp.office365.com', 587) as smtp:
