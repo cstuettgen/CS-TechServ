@@ -7,46 +7,15 @@ from email.mime.image import MIMEImage
 import os
 import csv
 
-"""*******************************************************************************************
-Add Mailer.py to same directory as your code.
-
-Copy 'def notify():' method to the code you are running.
-    modify the subject and body-vars to match your subject 
-    and order of variables in the body of of your HTML email body.
-
-Create folders 'Config', 'Attachments', 'Email_Message', 'Images'.
-
-Add HTML email body to 'Email_Message' and title it 'email.html'.
-
-Images to be embedded will be labeled in alphabetical order starting with index0.
-Add images to your HTML email body, 'email.html'
-    Ex.| <img width=469 height=263  src="cid:image0">
-       | <img width=469 height=263  src="cid:image1">
-
-Create credentials.txt in 'Config' folder and label creds that will be sending the email 
-with Email: and Password: on separate lines.
-    Ex.| Email:  john.doe@wherever.net
-       | Password:  ***********
-
-Create 'recipients.csv' and place it in the 'Config' folder.
-    Add this header to file: 'first_name,last_name,to_email,carbon_copy'.
-    Begin adding recipients on line 2 of csv.
-
-Add any files to be attached to the 'Attachments' folder.
-
-Add 'notify()' to your processes.
-**********************************************************************************************"""
-
 
 class Mailer:
-    def __init__(self, first_name, last_name, to_email, subject, carbon_copy, from_email_address,
-                 smtp_password, body_vars):
+    def __init__(self, first_name, last_name, to_email, carbon_copy, from_email_address,
+                 smtp_password):
         self.first_name = first_name
         self.last_name = last_name
         self.to_email = to_email
         self.carbon_copy = carbon_copy
-        self.subject = subject
-        self.body_vars = body_vars
+        self.subject = None
         self.msg = None
         self.from_email_address = from_email_address
         self.smtp_password = smtp_password
@@ -56,7 +25,7 @@ class Mailer:
 
     def compose_mail(self):
         msg = MIMEMultipart('related')
-        msg['Subject'] = self.subject
+        # msg['Subject'] = self.subject
         msg['From'] = self.from_email_address
         msg['To'] = self.to_email
         msg['cc'] = self.carbon_copy
@@ -64,18 +33,39 @@ class Mailer:
         path = "Email_Message/email.html"
 
         with open(path, encoding='utf-8') as f:
-            if self.body_vars is not None:
-                body_txt = f.read()
-                formatted = body_txt % self.body_vars
-            else:
-                body_txt = f.read()
-                formatted = body_txt
-
-        f.close()
-
-        msg.attach(MIMEText(formatted, 'html'))
-
-        self.msg = msg
+            body_txt = f.read()
+            formatted = body_txt
+            with open('Email_Message/merge_data.txt') as merge_data:
+                for line in merge_data:
+                    if not line.strip():
+                        continue
+                    stripped_line = line.strip()
+                    line_list = stripped_line.split()
+                    if line_list[0] == "*":
+                        continue
+                    if 'Subject:' in line_list:
+                        self.subject = " ".join(line_list[1:None])
+                    else:
+                        formatted = formatted.replace(line_list[0], line_list[1])
+                        print(f"BODY: replacing {line_list[0]}, with {line_list[1]}")
+            with open('Email_Message/merge_data.txt') as merge_data:
+                for line in merge_data:
+                    if not line.strip():
+                        continue
+                    stripped_line = line.strip()
+                    line_list = stripped_line.split()
+                    if line_list[0] == "*":
+                        continue
+                    if 'Subject:' in line_list:
+                        continue
+                    else:
+                        self.subject = self.subject.replace(line_list[0], line_list[1])
+                        print(f"SUBJECT: replacing {line_list[0]}, with {line_list[1]}")
+                        
+            print('SUBJECT: ', msg['subject'])
+            msg['Subject'] = self.subject
+            msg.attach(MIMEText(formatted, 'html'))            
+            self.msg = msg
 
     def embed_pics(self):
         pic_dir = r'images/'
@@ -103,11 +93,11 @@ class Mailer:
         attachment_dir = r'Attachments/'
         attachments = os.listdir(attachment_dir)
         print(attachments)
-        for file in attachments:           
+        for file in attachments:
             if os.path.isfile(f'{attachment_dir}{file}') is True:
                 attachment = MIMEApplication(open(f'{attachment_dir}{file}', 'rb').read())
                 attachment.add_header('Content-Disposition', 'attachment', filename=file)
-                self.msg.attach(attachment)                
+                self.msg.attach(attachment)
 
     def send_mail(self):
         with smtplib.SMTP('smtp.office365.com', 587) as smtp:
@@ -145,13 +135,8 @@ def notify():
         for row in csv_reader:
             first_name, last_name, to_email, carbon_copy = row
 
-            # ---edit subject and add variables for email body in order of appearance in your HTML email message--
-            subject = f'Hello {first_name}, this is a test message'
-            body_vars = (first_name, last_name, to_email)
-            # ----------------------------------------------------------------------------------------------------
-
-            email = Mailer(first_name, last_name, to_email, subject, carbon_copy,
-                           from_email_address, smtp_password, body_vars)
+            email = Mailer(first_name, last_name, to_email, carbon_copy,
+                           from_email_address, smtp_password)
 
             email.send_mail()
 
