@@ -1,0 +1,5 @@
+{fname} John
+{lname} Doe
+{poles} 182
+{coopname} Testers INC
+Subject: Hello {fname}, this is a test message
