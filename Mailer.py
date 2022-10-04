@@ -29,12 +29,17 @@ class Mailer:
         msg['From'] = self.from_email_address
         msg['To'] = self.to_email
         msg['cc'] = self.carbon_copy
+        print(f"\nTO: {self.to_email}\n"
+              f"FROM: {self.from_email_address}\n"
+              f"CC: {self.carbon_copy}\n"
+              )
 
         path = "Email_Message/email.html"
 
         with open(path, encoding='utf-8') as f:
             body_txt = f.read()
             formatted = body_txt
+            print(f'Reading HTML file, "{path}", into email body...')
             with open('Email_Message/merge_data.txt') as merge_data:
                 for line in merge_data:
                     if not line.strip():
@@ -60,11 +65,11 @@ class Mailer:
                         continue
                     else:
                         self.subject = self.subject.replace(line_list[0], line_list[1])
-                        print(f"SUBJECT: replacing {line_list[0]}, with {line_list[1]}")
-                        
-            print('SUBJECT: ', msg['subject'])
+                        # print(f"SUBJECT: replacing {line_list[0]}, with {line_list[1]}")
+
+            print('\nSUBJECT: ', self.subject)
             msg['Subject'] = self.subject
-            msg.attach(MIMEText(formatted, 'html'))            
+            msg.attach(MIMEText(formatted, 'html'))
             self.msg = msg
 
     def embed_pics(self):
@@ -87,17 +92,19 @@ class Mailer:
 
             image.add_header('content-ID', f'<image{i}>')
             self.msg.attach(image)
+            print(f'\nEMBEDDED IMAGES: {file}')
             i = i + 1
 
     def attachments(self):
         attachment_dir = r'Attachments/'
         attachments = os.listdir(attachment_dir)
-        print(attachments)
+
         for file in attachments:
             if os.path.isfile(f'{attachment_dir}{file}') is True:
                 attachment = MIMEApplication(open(f'{attachment_dir}{file}', 'rb').read())
                 attachment.add_header('Content-Disposition', 'attachment', filename=file)
                 self.msg.attach(attachment)
+                print(f'\nATTACHMENTS: {attachment.get_filename()}')
 
     def send_mail(self):
         with smtplib.SMTP('smtp.office365.com', 587) as smtp:
@@ -137,6 +144,11 @@ def notify():
 
             email = Mailer(first_name, last_name, to_email, carbon_copy,
                            from_email_address, smtp_password)
+            print(f'\nSending email to {first_name.upper().strip()} '
+                  f'{last_name.upper().strip()} '
+                  f'<{to_email.lower().strip()}>'
+                  '\n---------------------------------'
+                  )
 
             email.send_mail()
 
