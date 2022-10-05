@@ -110,13 +110,13 @@ SENDING INDIVIDUALIZED EMAILS TO ONE OR MORE RECIPIENTS
 
 SENDING A HYBRID OF STANDARDIZED EMAILS AND INDIVIDUALIZED EMAILS:
 
-	Mailer will only try to send an individualized email only if there is a directory name listed for the recipient 
-    in the 'recipients.csv' in the 'directory' column.
+	Mailer will only try to send an individualized email only if there is a directory name listed for 
+	the recipient in the 'recipients.csv' in the 'directory' column.
 
 	If the 'directory' column is blank for that recipient an email will be sent 
     from the root of the 'Attachments', 'Images', and 'Email_Message' as outlined with our first example.
 
-	  A hybrid file structure will look like the following:
+	  -A hybrid file structure will look like the following:
 
 
 	[Your Project Directory]	
