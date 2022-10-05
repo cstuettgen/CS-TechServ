@@ -31,7 +31,7 @@ class Mailer:
         # if (self.directory not in os.listdir(self.default_email_dir)
         #         and self.directory not in os.listdir(self.default_images_dir)
         #         and self.directory not in os.listdir(self.default_attachments_dir)):
-       
+
         if self.directory == '':
             print(f'\n---Using default folders for email body, embedded images and attachments---')
 
@@ -60,8 +60,12 @@ class Mailer:
               f"FROM: {self.from_email_address}\n"
               f"CC: {self.carbon_copy}\n"
               )
+        if self.directory != '':
+            email_html = f'{self.directory}.html'
+        else:
+            email_html = 'email.html'
 
-        with open(os.path.join(self.default_email_dir, 'email.html'), encoding='utf-8') as f:
+        with open(os.path.join(self.default_email_dir, email_html), encoding='utf-8') as f:
             body_txt = f.read()
             formatted = body_txt
             print(f'Reading HTML file, "{self.default_email_dir}\\email.html", into email body...')
