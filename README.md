@@ -38,8 +38,8 @@ EDITING YOUR EMAIL MESSAGE:
 	
 EMBEDDING IMAGES:
 
-	Embed pictures in your HTML email.html using the source "src=cid:imagex" where x starts at 0 for the first picture in 
-    alphabetical order in the 'Images' directory. Size as needed using HTML
+	Embed pictures in your HTML email.html using the source "src=cid:imagex" where x 
+	starts at 0 for the first picture in alphabetical order in the 'Images' directory. Size as needed using HTML
 
 
 ADDING ATTACHMENTS:
