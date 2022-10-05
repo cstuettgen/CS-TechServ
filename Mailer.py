@@ -28,15 +28,18 @@ class Mailer:
         self.attachments()
 
     def set_dirs(self):
-        if (self.directory not in os.listdir(self.default_email_dir)
-                and self.directory not in os.listdir(self.default_images_dir)
-                and self.directory not in os.listdir(self.default_attachments_dir)):
+        # if (self.directory not in os.listdir(self.default_email_dir)
+        #         and self.directory not in os.listdir(self.default_images_dir)
+        #         and self.directory not in os.listdir(self.default_attachments_dir)):
+       
+        if self.directory == '':
             print(f'\n---Using default folders for email body, embedded images and attachments---')
 
         elif (self.directory not in os.listdir(self.default_email_dir)
                 or self.directory not in os.listdir(self.default_images_dir)
                 or self.directory not in os.listdir(self.default_attachments_dir)):
-            print(f'\n*** A folder is missing for recipient {self.first_name} {self.last_name} <{self.to_email}> ***')
+            print(f'\n*** One or more folders is missing for recipient {self.first_name} {self.last_name}'
+                  f' <{self.to_email}> ***')
             exit()
 
         elif (self.directory in os.listdir(self.default_email_dir)
@@ -166,4 +169,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    
