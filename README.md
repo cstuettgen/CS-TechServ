@@ -1,6 +1,6 @@
 INTRODUCTION: 
 
-	Mailer is a fast way to merge data into an E-mail and send E-mail en masse.
+	Mailer is a fast way to merge data into an email and send email en masse.
 
 	-Add this folder structure to your project:
 
