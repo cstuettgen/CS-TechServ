@@ -77,9 +77,9 @@ class Mailer:
             self.msg = msg
 
     def embed_pics(self):
-        pic_dir = self.default_images_dir + '/'
+        pic_dir = self.default_images_dir + '\\'
         pics = os.listdir(pic_dir)
-        print(pic_dir)
+
         pic_list = []
         pic_ext = ['.jpg', '.jpeg', '.png']
         for file in pics:
@@ -100,7 +100,7 @@ class Mailer:
             i = i + 1
 
     def attachments(self):
-        attachment_dir = self.default_atachments_dir + '/'
+        attachment_dir = self.default_atachments_dir + '\\'
         attachments = os.listdir(attachment_dir)
 
         for file in attachments:
