@@ -11,19 +11,45 @@ import csv
 class Mailer:
     def __init__(self, from_email_address, smtp_password, **kwargs):
         self.first_name = kwargs['first_name']
-        self.last_name = kwargs['first_name']
+        self.last_name = kwargs['last_name']
         self.to_email = kwargs['to_email']
         self.carbon_copy = kwargs['carbon_copy']
         self.subject = kwargs['subject']
+        self.directory = kwargs['directory']
         self.msg = None
         self.from_email_address = from_email_address
         self.smtp_password = smtp_password
+        self.default_email_dir = 'Email_Message\\'
+        self.default_atachments_dir = 'Attachments\\'
+        self.default_images_dir = 'Images\\'
+        self.set_dirs()
         self.compose_mail(**kwargs)
         self.embed_pics()
         self.attachments()
 
+    def set_dirs(self):
+        if (self.directory not in os.listdir(self.default_email_dir)
+                and self.directory not in os.listdir(self.default_images_dir)
+                and self.directory not in os.listdir(self.default_atachments_dir)):
+            print(f'\n---Using default folders for email body, embedded images and attachments---')
+
+        elif (self.directory not in os.listdir(self.default_email_dir)
+                or self.directory not in os.listdir(self.default_images_dir)
+                or self.directory not in os.listdir(self.default_atachments_dir)):
+            print(f'\n*** A folder is missing for recipient {self.first_name} {self.last_name} <{self.to_email}> ***')
+            exit()
+
+        elif (self.directory in os.listdir(self.default_email_dir)
+                and self.directory in os.listdir(self.default_images_dir)
+                and self.directory in os.listdir(self.default_atachments_dir)):
+            self.default_atachments_dir = os.path.join(self.default_atachments_dir, self.directory)
+            self.default_images_dir = os.path.join(self.default_images_dir, self.directory)
+            self.default_email_dir = os.path.join(self.default_email_dir, self.directory)
+            print(f'\n---Using folder, "{os.path.join(self.default_email_dir,self.directory)}"'
+                  f', for email body, embedded images and attachments---')
+
     def compose_mail(self, **kwargs):
-        msg = MIMEMultipart('related')        
+        msg = MIMEMultipart('related')
         msg['From'] = self.from_email_address
         msg['To'] = self.to_email
         msg['cc'] = self.carbon_copy
@@ -32,12 +58,10 @@ class Mailer:
               f"CC: {self.carbon_copy}\n"
               )
 
-        path = "Email_Message/email.html"
-
-        with open(path, encoding='utf-8') as f:
+        with open(os.path.join(self.default_email_dir, 'email.html'), encoding='utf-8') as f:
             body_txt = f.read()
             formatted = body_txt
-            print(f'Reading HTML file, "{path}", into email body...')
+            print(f'Reading HTML file, "{self.default_email_dir}\\email.html", into email body...')
 
             for item in kwargs:
                 f_item = '{'+item+'}'
@@ -45,7 +69,7 @@ class Mailer:
                 if f_item in self.subject:
                     self.subject = self.subject.replace(f_item, kwargs[item])
                 if f_item in formatted:
-                    formatted = formatted.replace(f_item,kwargs[item])
+                    formatted = formatted.replace(f_item, kwargs[item])
 
             msg['Subject'] = self.subject
             msg.attach(MIMEText(formatted, 'html'))
@@ -53,16 +77,16 @@ class Mailer:
             self.msg = msg
 
     def embed_pics(self):
-        pic_dir = r'images/'
+        pic_dir = self.default_images_dir + '/'
         pics = os.listdir(pic_dir)
-
+        print(pic_dir)
         pic_list = []
-        pic_ext = ['.jpg', '.jpeg', 'png']
+        pic_ext = ['.jpg', '.jpeg', '.png']
         for file in pics:
-            extension = pathlib.Path(file).suffix
-            if extension.lower() in pic_ext:
-                pic_list.append(file)
+            extension = pathlib.Path(file).suffix.lower()
 
+            if extension in pic_ext:
+                pic_list.append(file)
         pic_list.sort()
         i = 0
 
@@ -76,7 +100,7 @@ class Mailer:
             i = i + 1
 
     def attachments(self):
-        attachment_dir = r'Attachments/'
+        attachment_dir = self.default_atachments_dir + '/'
         attachments = os.listdir(attachment_dir)
 
         for file in attachments:
