@@ -38,7 +38,7 @@ EDITING YOUR EMAIL MESSAGE:
 	
 EMBEDDING IMAGES:
 
-	Embed pictures in your HTML email.html using the source "src=cid:imagex" where x 
+	Embed JPEG and PNG pictures in your HTML email.html using the source "src=cid:imagex" where x 
 	starts at 0 for the first picture in alphabetical order in the 'Images' directory. Size as needed using HTML
 
 
@@ -103,9 +103,9 @@ SENDING INDIVIDUALIZED EMAILS TO ONE OR MORE RECIPIENTS
 		 |
 		 |
 		 +[Images]
- 		 |  L +[Some_Company_Name]
-		 |		L Image1.jpeg
-		 |		L Image2.png
+ 		    L +[Some_Company_Name]
+		  		L Image1.jpeg
+		  		L Image2.png
 
 
 SENDING A HYBRID OF STANDARDIZED EMAILS AND INDIVIDUALIZED EMAILS:
@@ -146,12 +146,12 @@ SENDING A HYBRID OF STANDARDIZED EMAILS AND INDIVIDUALIZED EMAILS:
 		 |
 		 |
 		 +[Images]
- 		 |   |	L Image1.jpeg
-		 |   |	L Image2.png
-		 |   |	
- 		 |   +[Some_Company_Name]
-		 |		L Image1.jpeg
-		 |		L Image2.png
+ 		     |	L Image1.jpeg
+		     |	L Image2.png
+		     |	
+ 		     +[Some_Company_Name]
+		  		L Image1.jpeg
+		  		L Image2.png
 
 
 NOTE:
