@@ -9,23 +9,21 @@ import csv
 
 
 class Mailer:
-    def __init__(self, first_name, last_name, to_email, carbon_copy, from_email_address,
-                 smtp_password):
-        self.first_name = first_name
-        self.last_name = last_name
-        self.to_email = to_email
-        self.carbon_copy = carbon_copy
-        self.subject = None
+    def __init__(self, from_email_address, smtp_password, **kwargs):
+        self.first_name = kwargs['first_name']
+        self.last_name = kwargs['first_name']
+        self.to_email = kwargs['to_email']
+        self.carbon_copy = kwargs['carbon_copy']
+        self.subject = kwargs['subject']
         self.msg = None
         self.from_email_address = from_email_address
         self.smtp_password = smtp_password
-        self.compose_mail()
+        self.compose_mail(**kwargs)
         self.embed_pics()
         self.attachments()
 
-    def compose_mail(self):
-        msg = MIMEMultipart('related')
-        # msg['Subject'] = self.subject
+    def compose_mail(self, **kwargs):
+        msg = MIMEMultipart('related')        
         msg['From'] = self.from_email_address
         msg['To'] = self.to_email
         msg['cc'] = self.carbon_copy
@@ -40,36 +38,18 @@ class Mailer:
             body_txt = f.read()
             formatted = body_txt
             print(f'Reading HTML file, "{path}", into email body...')
-            with open('Email_Message/merge_data.txt') as merge_data:
-                for line in merge_data:
-                    if not line.strip():
-                        continue
-                    stripped_line = line.strip()
-                    line_list = stripped_line.split()
-                    if line_list[0] == "*":
-                        continue
-                    if 'Subject:' in line_list:
-                        self.subject = " ".join(line_list[1:None])
-                    else:
-                        formatted = formatted.replace(line_list[0], line_list[1])
-                        print(f"BODY: replacing {line_list[0]}, with {line_list[1]}")
-            with open('Email_Message/merge_data.txt') as merge_data:
-                for line in merge_data:
-                    if not line.strip():
-                        continue
-                    stripped_line = line.strip()
-                    line_list = stripped_line.split()
-                    if line_list[0] == "*":
-                        continue
-                    if 'Subject:' in line_list:
-                        continue
-                    else:
-                        self.subject = self.subject.replace(line_list[0], line_list[1])
-                        # print(f"SUBJECT: replacing {line_list[0]}, with {line_list[1]}")
 
-            print('\nSUBJECT: ', self.subject)
+            for item in kwargs:
+                f_item = '{'+item+'}'
+
+                if f_item in self.subject:
+                    self.subject = self.subject.replace(f_item, kwargs[item])
+                if f_item in formatted:
+                    formatted = formatted.replace(f_item,kwargs[item])
+
             msg['Subject'] = self.subject
             msg.attach(MIMEText(formatted, 'html'))
+            print(f'\nSUBJECT: {self.subject}')
             self.msg = msg
 
     def embed_pics(self):
@@ -137,16 +117,19 @@ def notify():
 
     with open('config/recipients.csv', 'r') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
-        _ = next(csv_reader)
+        header = next(csv_reader)
 
         for row in csv_reader:
-            first_name, last_name, to_email, carbon_copy = row
+            i = 0
+            csv_row = {}
+            for column in header:
+                csv_row.update({column.split()[0]: row[i]})
+                i += 1
 
-            email = Mailer(first_name, last_name, to_email, carbon_copy,
-                           from_email_address, smtp_password)
-            print(f'\nSending email to {first_name.upper().strip()} '
-                  f'{last_name.upper().strip()} '
-                  f'<{to_email.lower().strip()}>'
+            email = Mailer(from_email_address, smtp_password, **csv_row)
+            print(f'\nSending email to {csv_row["first_name"].upper().strip()} '
+                  f'{csv_row["last_name"].upper().strip()} '
+                  f'<{csv_row["to_email"].lower().strip()}>'
                   '\n---------------------------------'
                   )
 
