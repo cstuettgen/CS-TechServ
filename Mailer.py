@@ -20,7 +20,7 @@ class Mailer:
         self.from_email_address = from_email_address
         self.smtp_password = smtp_password
         self.default_email_dir = 'Email_Message\\'
-        self.default_atachments_dir = 'Attachments\\'
+        self.default_attachments_dir = 'Attachments\\'
         self.default_images_dir = 'Images\\'
         self.set_dirs()
         self.compose_mail(**kwargs)
@@ -30,19 +30,19 @@ class Mailer:
     def set_dirs(self):
         if (self.directory not in os.listdir(self.default_email_dir)
                 and self.directory not in os.listdir(self.default_images_dir)
-                and self.directory not in os.listdir(self.default_atachments_dir)):
+                and self.directory not in os.listdir(self.default_attachments_dir)):
             print(f'\n---Using default folders for email body, embedded images and attachments---')
 
         elif (self.directory not in os.listdir(self.default_email_dir)
                 or self.directory not in os.listdir(self.default_images_dir)
-                or self.directory not in os.listdir(self.default_atachments_dir)):
+                or self.directory not in os.listdir(self.default_attachments_dir)):
             print(f'\n*** A folder is missing for recipient {self.first_name} {self.last_name} <{self.to_email}> ***')
             exit()
 
         elif (self.directory in os.listdir(self.default_email_dir)
                 and self.directory in os.listdir(self.default_images_dir)
-                and self.directory in os.listdir(self.default_atachments_dir)):
-            self.default_atachments_dir = os.path.join(self.default_atachments_dir, self.directory)
+                and self.directory in os.listdir(self.default_attachments_dir)):
+            self.default_attachments_dir = os.path.join(self.default_attachments_dir, self.directory)
             self.default_images_dir = os.path.join(self.default_images_dir, self.directory)
             self.default_email_dir = os.path.join(self.default_email_dir, self.directory)
             print(f'\n---Using folder, "{os.path.join(self.default_email_dir,self.directory)}"'
@@ -100,7 +100,7 @@ class Mailer:
             i = i + 1
 
     def attachments(self):
-        attachment_dir = self.default_atachments_dir + '\\'
+        attachment_dir = self.default_attachments_dir + '\\'
         attachments = os.listdir(attachment_dir)
 
         for file in attachments:
@@ -166,3 +166,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    
