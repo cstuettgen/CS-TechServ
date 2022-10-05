@@ -45,6 +45,12 @@ EMBEDDING IMAGES:
 ADDING ATTACHMENTS:
 	
 	Add your files to attach to the 'Attachments' directory
+	
+EDITING RECIPIENTS:
+
+	Fill in each row of 'recipients.csv' as outlined by the headers. Additional headers can be created to pass custom data to 
+	the email body by adding the the header name to your HTML in curly brackets. The 'subject' column will also allow 
+	for adding the headers in curly brackets to allow for custom subject lines. 
 
 
 SETTING CREDENTIALS:
