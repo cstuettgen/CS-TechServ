@@ -221,7 +221,7 @@ def notify(send_email=True, print_to_dir=False):
 
                       )
                 eml.send_mail()
-            print(print_to_dir)
+                
             if print_to_dir is True:
                 print(f'\nPrinting email to {eml.default_email_dir}\\Export')
                 (eml.eml_to_pdf())
