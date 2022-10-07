@@ -26,12 +26,8 @@ class Mailer:
         self.compose_mail(**kwargs)
         self.embed_pics()
         self.attachments()
-        # print(self.msg)
 
     def set_dirs(self):
-        # if (self.directory not in os.listdir(self.default_email_dir)
-        #         and self.directory not in os.listdir(self.default_images_dir)
-        #         and self.directory not in os.listdir(self.default_attachments_dir)):
 
         if self.directory == '':
             print(f'\n---Using default folders for email body, embedded images and attachments---')
