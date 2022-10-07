@@ -68,6 +68,12 @@ SENDING YOUR EMAILS:
 	add 'Import Mailer', and use 'Mailer.notify()' to send emails.
 
 	'Mailer.notify()' will default to using data from the root of the 'Attachments', 'Images', and 'Email_Message' 
+	
+	Using 'Mailer.notify(send_email=False)' will run the process but not send an email. 
+
+EXPORTING TO PDF:
+	
+	Using 'Mailer.notify(print_to_dir=True)' will export the email body to PDF in the email message directory.
 
 
 SENDING INDIVIDUALIZED EMAILS TO ONE OR MORE RECIPIENTS
@@ -158,3 +164,5 @@ NOTE:
 
 	The script will exit with a message if a directory is listed in 'recipients.csv' and one or 
     more matching directories is not found in 'Attachments', 'Images', and 'Email_Message'.
+    
+    Using 'Mailer.notify(send_email=False, print_to_dir=False)' will only print to terminal and will not output any files or send an email.
