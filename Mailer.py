@@ -230,8 +230,6 @@ def notify(send_email=True, print_to_dir=False):
             if print_to_dir is False and send_email is False:
                 print('\n*** No output generated and no email sent ***')
 
-
-
             print('\n---------------------------------')
             
             
