@@ -57,10 +57,7 @@ class Mailer:
         msg['From'] = self.from_email_address
         msg['To'] = self.to_email
         msg['cc'] = self.carbon_copy
-        print(f"\nTO: {self.to_email}\n"
-              f"FROM: {self.from_email_address}\n"
-              f"CC: {self.carbon_copy}\n"
-              )
+
         if self.directory != '':
             email_html = f'{self.directory}.html'
         else:
@@ -69,7 +66,11 @@ class Mailer:
         with open(os.path.join(self.default_email_dir, email_html), encoding='utf-8') as f:
             body_txt = f.read()
             formatted = body_txt
-            print(f'Reading HTML file, "{self.default_email_dir}\\email.html", into email body...')
+            print(f'\n*** Reading HTML file, "{self.default_email_dir}\\email.html", into email body... ***')
+            print(f"\nTO: {self.to_email}\n"
+                  f"FROM: {self.from_email_address}\n"
+                  f"CC: {self.carbon_copy}\n"
+                  )
 
             for item in kwargs:
                 f_item = '{'+item+'}'
@@ -81,7 +82,7 @@ class Mailer:
 
             msg['Subject'] = self.subject
             msg.attach(MIMEText(formatted, 'html'))
-            print(f'\nSUBJECT: {self.subject}')
+            print(f'\n  SUBJECT: {self.subject}')
             self.msg = msg
 
     def sort_pics(self):
@@ -107,7 +108,7 @@ class Mailer:
 
             image.add_header('content-ID', f'<image{i}>')
             self.msg.attach(image)
-            print(f'\nEMBEDDED IMAGES: {file}')
+            print(f'\n      EMBEDDED IMAGES: {file}')
             i = i + 1
 
     def attachments(self):
@@ -119,7 +120,7 @@ class Mailer:
                 attachment = MIMEApplication(open(f'{attachment_dir}{file}', 'rb').read())
                 attachment.add_header('Content-Disposition', 'attachment', filename=file)
                 self.msg.attach(attachment)
-                print(f'\nATTACHMENTS: {attachment.get_filename()}')
+                print(f'\n      ATTACHMENTS: {attachment.get_filename()}')
 
     def send_mail(self):
         with smtplib.SMTP('smtp.office365.com', 587) as smtp:
@@ -168,7 +169,7 @@ class Mailer:
                                     os.listdir(self.default_images_dir)[pic_list.index(pic)]
                                     )
                 pic_replacement = pic_replacement.replace(src, swap)
-        print('\n.EML to .HTML: Writing e-mail body to HTML')
+        print('\n   .EML to .HTML: Writing e-mail body to HTML')
         with open(fp, 'w', encoding='utf-8') as html:
             html.write(pic_replacement)
 
@@ -177,7 +178,7 @@ class Mailer:
 
         path_to_file = fp
         output_path = os.path.join(self.default_email_dir, f'Export/{self.directory}.export.pdf')
-        print('\n.HTML to .PDF: Converting body to PDF')
+        print('\n   .HTML to .PDF: Converting body to PDF')
         os.system(path_to_wkhtmltopdf + ' ' + path_to_file + ' ' + output_path)
 
 
@@ -215,23 +216,23 @@ def notify(send_email=True, print_to_dir=False):
             eml = Mailer(from_email_address, smtp_password, **csv_row)
 
             if send_email is True:
-                print(f'\nSending email to {csv_row["first_name"].upper().strip()} '
+                print(f'\n*** Sending email to {csv_row["first_name"].upper().strip()} '
                       f'{csv_row["last_name"].upper().strip()} '
-                      f'<{csv_row["to_email"].lower().strip()}>'
+                      f'<{csv_row["to_email"].lower().strip()}> ***'
 
                       )
                 eml.send_mail()
-                
+
             if print_to_dir is True:
-                print(f'\nPrinting email to {eml.default_email_dir}\\Export')
+                print(f'\n*** Printing email to {eml.default_email_dir}\\Export ***')
                 (eml.eml_to_pdf())
 
             if print_to_dir is False and send_email is False:
                 print('\n*** No output generated and no email sent ***')
 
-            print('\n---------------------------------')
-            
-            
+            print('\n------------------------------------------------------')
+
+
 def main():
     notify()
 
