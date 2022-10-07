@@ -8,6 +8,7 @@ import os
 import csv
 
 
+
 class Mailer:
     def __init__(self, from_email_address, smtp_password, **kwargs):
         self.first_name = kwargs['first_name']
@@ -26,6 +27,7 @@ class Mailer:
         self.compose_mail(**kwargs)
         self.embed_pics()
         self.attachments()
+        # print(self.msg)
 
     def set_dirs(self):
         # if (self.directory not in os.listdir(self.default_email_dir)
@@ -83,7 +85,7 @@ class Mailer:
             print(f'\nSUBJECT: {self.subject}')
             self.msg = msg
 
-    def embed_pics(self):
+    def sort_pics(self):
         pic_dir = self.default_images_dir + '\\'
         pics = os.listdir(pic_dir)
 
@@ -95,10 +97,13 @@ class Mailer:
             if extension in pic_ext:
                 pic_list.append(file)
         pic_list.sort()
-        i = 0
+        return pic_list
 
+    def embed_pics(self):
+        i = 0
+        pic_list = self.sort_pics()
         for file in pic_list:
-            with open(f'{pic_dir}{file}', 'rb') as img:
+            with open(os.path.join(self.default_images_dir, file), 'rb') as img:
                 image = MIMEImage(img.read())
 
             image.add_header('content-ID', f'<image{i}>')
@@ -125,8 +130,59 @@ class Mailer:
             smtp.login(self.from_email_address, self.smtp_password)
             smtp.send_message(self.msg)
 
+    def eml_to_pdf(self):
+        fp = None
+        temp = []
+        parts = self.msg.get_payload()
 
-def notify():
+        for p in parts:
+
+            ct = p.get_content_type()
+
+            if 'image/jpeg' in ct or 'image/png' in ct:
+                continue
+            if 'text/html' in ct and 'Content-Disposition: attachment;' not in ct:
+
+                fp = os.path.join(self.default_email_dir, f'Export/{self.directory}.export.html')
+                if os.path.dirname(fp):
+                    os.makedirs(os.path.dirname(fp), exist_ok=True)
+                temp.append(p)
+
+        with open(fp, 'wb') as html:
+            html.write(temp[0].get_payload(decode=True))
+
+        pic_list = self.sort_pics()
+
+        with open(fp, encoding='utf-8') as html:
+            pic_replacement = html.read()
+
+        for pic in pic_list:
+            src = f'cid:image{pic_list.index(pic)}'
+            if self.directory == '':
+                swap = os.path.join('..\\..\\' + self.default_images_dir,
+                                    os.listdir(self.default_images_dir)[pic_list.index(pic)]
+                                    )
+                pic_replacement = pic_replacement.replace(src, swap)
+
+            else:
+                swap = os.path.join('..\\..\\..\\' + self.default_images_dir,
+                                    os.listdir(self.default_images_dir)[pic_list.index(pic)]
+                                    )
+                pic_replacement = pic_replacement.replace(src, swap)
+        print('\n.EML to .HTML: Writing e-mail body to HTML')
+        with open(fp, 'w', encoding='utf-8') as html:
+            html.write(pic_replacement)
+
+        path_to_wkhtmltopdf = r'"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"' \
+                              r' --enable-local-file-access -q'
+
+        path_to_file = fp
+        output_path = os.path.join(self.default_email_dir, f'Export/{self.directory}.export.pdf')
+        print('\n.HTML to .PDF: Converting body to PDF')
+        os.system(path_to_wkhtmltopdf + ' ' + path_to_file + ' ' + output_path)
+
+
+def notify(send_email=True, print_to_dir=False):
 
     from_email_address = None
     smtp_password = None
@@ -157,16 +213,28 @@ def notify():
                 csv_row.update({column.split()[0]: row[i]})
                 i += 1
 
-            email = Mailer(from_email_address, smtp_password, **csv_row)
-            print(f'\nSending email to {csv_row["first_name"].upper().strip()} '
-                  f'{csv_row["last_name"].upper().strip()} '
-                  f'<{csv_row["to_email"].lower().strip()}>'
-                  '\n---------------------------------'
-                  )
+            eml = Mailer(from_email_address, smtp_password, **csv_row)
 
-            email.send_mail()
+            if send_email is True:
+                print(f'\nSending email to {csv_row["first_name"].upper().strip()} '
+                      f'{csv_row["last_name"].upper().strip()} '
+                      f'<{csv_row["to_email"].lower().strip()}>'
+
+                      )
+                eml.send_mail()
+            print(print_to_dir)
+            if print_to_dir is True:
+                print(f'\nPrinting email to {eml.default_email_dir}\\Export')
+                (eml.eml_to_pdf())
+
+            if print_to_dir is False and send_email is False:
+                print('\n*** No output generated and no email sent ***')
 
 
+
+            print('\n---------------------------------')
+            
+            
 def main():
     notify()
 
