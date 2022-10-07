@@ -8,7 +8,6 @@ import os
 import csv
 
 
-
 class Mailer:
     def __init__(self, from_email_address, smtp_password, **kwargs):
         self.first_name = kwargs['first_name']
