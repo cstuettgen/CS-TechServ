@@ -67,10 +67,11 @@ class Mailer:
         with open(os.path.join(self.default_email_dir, email_html), encoding='utf-8') as f:
             body_txt = f.read()
             formatted = body_txt
-            if self.directory =='':
+            if self.directory == '':
                 logging.info(f'*** Reading HTML file, "{self.default_email_dir}\\email.html", into email body... ***')
             else:
-                logging.info(f'*** Reading HTML file, "{self.default_email_dir}\\{self.directory}.html", into email body... ***')
+                logging.info(f'*** Reading HTML file,'
+                             f' "{self.default_email_dir}\\{self.directory}.html", into email body... ***')
             logging.info(f"TO: {self.to_email} ")
             logging.info(f"FROM: {self.from_email_address} ")
             logging.info(f"CC: {self.carbon_copy} ")
@@ -82,7 +83,9 @@ class Mailer:
                     self.subject = self.subject.replace(f_item, kwargs[item])
                 if f_item in formatted:
                     formatted = formatted.replace(f_item, kwargs[item])
+
             logging.debug(f'Email body .HTML:\n{formatted}\n')
+
             msg['Subject'] = self.subject
             msg.attach(MIMEText(formatted, 'html'))
             logging.info(f'SUBJECT: {self.subject} ')
