@@ -4,8 +4,11 @@ from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
+import shutil
 import os
 import csv
+from weasyprint import HTML
+import logging
 
 
 class Mailer:
@@ -22,21 +25,21 @@ class Mailer:
         self.default_email_dir = 'Email_Message\\'
         self.default_attachments_dir = 'Attachments\\'
         self.default_images_dir = 'Images\\'
-        self.set_dirs()
-        self.compose_mail(**kwargs)
-        self.embed_pics()
-        self.attachments()
+        self.default_dirs = self.set_dirs()
+        self.mime_body = self.compose_mail(**kwargs)
+        self.mime_pics = self.embed_pics()
+        self.mime_attachments = self.attachments()
 
     def set_dirs(self):
 
         if self.directory == '':
-            print(f'\n---Using default folders for email body, embedded images and attachments---')
+            logging.info(f'*** Using default folders for email body, embedded images and attachments ***')
 
         elif (self.directory not in os.listdir(self.default_email_dir)
                 or self.directory not in os.listdir(self.default_images_dir)
                 or self.directory not in os.listdir(self.default_attachments_dir)):
-            print(f'\n*** One or more folders is missing for recipient {self.first_name} {self.last_name}'
-                  f' <{self.to_email}> ***')
+            logging.info(f'*** One or more folders is missing for recipient {self.first_name} {self.last_name}'
+                         f' <{self.to_email}> ***')
             exit()
 
         elif (self.directory in os.listdir(self.default_email_dir)
@@ -45,8 +48,10 @@ class Mailer:
             self.default_attachments_dir = os.path.join(self.default_attachments_dir, self.directory)
             self.default_images_dir = os.path.join(self.default_images_dir, self.directory)
             self.default_email_dir = os.path.join(self.default_email_dir, self.directory)
-            print(f'\n---Using folder, "{os.path.join(self.default_email_dir,self.directory)}"'
-                  f', for email body, embedded images and attachments---')
+            logging.info(f'---Using folder, "{os.path.join(self.default_email_dir,self.directory)}"'
+                         f', for email body, embedded images and attachments---')
+
+            return self.default_email_dir, self.default_images_dir, self.default_attachments_dir
 
     def compose_mail(self, **kwargs):
         msg = MIMEMultipart('related')
@@ -62,11 +67,11 @@ class Mailer:
         with open(os.path.join(self.default_email_dir, email_html), encoding='utf-8') as f:
             body_txt = f.read()
             formatted = body_txt
-            print(f'\n*** Reading HTML file, "{self.default_email_dir}\\email.html", into email body... ***')
-            print(f"\nTO: {self.to_email}\n"
-                  f"FROM: {self.from_email_address}\n"
-                  f"CC: {self.carbon_copy}\n"
-                  )
+            logging.info(f'*** Reading HTML file, "{self.default_email_dir}\\email.html", into email body... ***')
+            logging.info(f"TO: {self.to_email} "
+                         f"FROM: {self.from_email_address} "
+                         f"CC: {self.carbon_copy}"
+                          )
 
             for item in kwargs:
                 f_item = '{'+item+'}'
@@ -75,11 +80,13 @@ class Mailer:
                     self.subject = self.subject.replace(f_item, kwargs[item])
                 if f_item in formatted:
                     formatted = formatted.replace(f_item, kwargs[item])
-
+            logging.debug(f'Email body .HTML:\n{formatted}\n')
             msg['Subject'] = self.subject
             msg.attach(MIMEText(formatted, 'html'))
-            print(f'\n  SUBJECT: {self.subject}')
+            logging.info(f'  SUBJECT: {self.subject}')
             self.msg = msg
+
+            return msg
 
     def sort_pics(self):
         pic_dir = self.default_images_dir + '\\'
@@ -104,8 +111,10 @@ class Mailer:
 
             image.add_header('content-ID', f'<image{i}>')
             self.msg.attach(image)
-            print(f'\n      EMBEDDED IMAGES: {file}')
+            logging.info(f'      EMBEDDED IMAGES: {file}')
             i = i + 1
+
+        return pic_list
 
     def attachments(self):
         attachment_dir = self.default_attachments_dir + '\\'
@@ -116,7 +125,9 @@ class Mailer:
                 attachment = MIMEApplication(open(f'{attachment_dir}{file}', 'rb').read())
                 attachment.add_header('Content-Disposition', 'attachment', filename=file)
                 self.msg.attach(attachment)
-                print(f'\n      ATTACHMENTS: {attachment.get_filename()}')
+                logging.info(f'      ATTACHMENTS: {attachment.get_filename()}')
+
+            return attachments
 
     def send_mail(self):
         with smtplib.SMTP('smtp.office365.com', 587) as smtp:
@@ -138,8 +149,10 @@ class Mailer:
             if 'image/jpeg' in ct or 'image/png' in ct:
                 continue
             if 'text/html' in ct and 'Content-Disposition: attachment;' not in ct:
-
-                fp = os.path.join(self.default_email_dir, f'Export/{self.directory}.export.html')
+                if self.directory != '':
+                    fp = os.path.join(self.default_email_dir, f'Export\\{self.directory}.export.html')
+                else:
+                    fp = os.path.join(self.default_email_dir, f'Export\\email.export.html')
                 if os.path.dirname(fp):
                     os.makedirs(os.path.dirname(fp), exist_ok=True)
                 temp.append(p)
@@ -165,20 +178,48 @@ class Mailer:
                                     os.listdir(self.default_images_dir)[pic_list.index(pic)]
                                     )
                 pic_replacement = pic_replacement.replace(src, swap)
-        print('\n   .EML to .HTML: Writing e-mail body to HTML')
+
+        logging.info(f'   .EML to .HTML: Writing e-mail body to {fp}')
+
         with open(fp, 'w', encoding='utf-8') as html:
             html.write(pic_replacement)
 
-        path_to_wkhtmltopdf = r'"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"' \
-                              r' --enable-local-file-access -q'
+        if self.directory == '':
+            output_path = os.path.join(self.default_email_dir, f'Export\\email.export.pdf')
+        else:
+            output_path = os.path.join(self.default_email_dir, f'Export\\{self.directory}.export.pdf')
 
-        path_to_file = fp
-        output_path = os.path.join(self.default_email_dir, f'Export/{self.directory}.export.pdf')
-        print('\n   .HTML to .PDF: Converting body to PDF')
-        os.system(path_to_wkhtmltopdf + ' ' + path_to_file + ' ' + output_path)
+        logging.info(f'   .HTML to .PDF: Converting body to {output_path}')
+
+        HTML(fp).write_pdf(output_path)
+
+        return output_path
+
+    def attach_pdf(self, write_to_dir):
+        if self.directory == '':
+            output_path = os.path.join(self.default_attachments_dir, f'email.export.pdf')
+            source_path = os.path.join(self.default_email_dir, f'Export\\email.export.pdf')
+            file = f'email.export.pdf'
+        else:
+            output_path = os.path.join(self.default_attachments_dir, f'{self.directory}.export.pdf')
+            source_path = os.path.join(self.default_email_dir, f'Export\\{self.directory}.export.pdf')
+            file = f'{self.directory}.export.pdf'
+
+        if write_to_dir is True:
+            shutil.copyfile(source_path, output_path)
+
+        else:
+            self.eml_to_pdf()
+            shutil.copyfile(source_path, output_path)
+        attachment = MIMEApplication(open(output_path, 'rb').read())
+        attachment.add_header('Content-Disposition', 'attachment', filename=file)
+        self.msg.attach(attachment)
+        logging.info('*** Attaching copy of email body as PDF ***')
+        os.remove(output_path)
 
 
-def notify(send_email=True, print_to_dir=False):
+def notify(send_email=True, write_to_dir=False, attach_email_as_pdf=False, log_level=logging.INFO):
+    logger(log_level)
 
     from_email_address = None
     smtp_password = None
@@ -203,6 +244,9 @@ def notify(send_email=True, print_to_dir=False):
         header = next(csv_reader)
 
         for row in csv_reader:
+
+            logging.debug(f'recipients.csv:\n{header}\n{row}')
+
             i = 0
             csv_row = {}
             for column in header:
@@ -211,26 +255,71 @@ def notify(send_email=True, print_to_dir=False):
 
             eml = Mailer(from_email_address, smtp_password, **csv_row)
 
+            if write_to_dir is True:
+
+                pdf_path = eml.eml_to_pdf()
+
+                logging.info(f'*** Email saved to {pdf_path} ***')
+
+            if attach_email_as_pdf is True:
+                if send_email is False:
+                    logging.info(' !======!     SEND EMAIL NOT SELECTED!    !======!')
+                else:
+                    eml.attach_pdf(write_to_dir)
+
             if send_email is True:
-                print(f'\n*** Sending email to {csv_row["first_name"].upper().strip()} '
-                      f'{csv_row["last_name"].upper().strip()} '
-                      f'<{csv_row["to_email"].lower().strip()}> ***'
+                logging.info(f'*** Sending email to {csv_row["first_name"].upper().strip()} '
+                             f'{csv_row["last_name"].upper().strip()} '
+                             f'<{csv_row["to_email"].lower().strip()}> ***'
 
                       )
                 eml.send_mail()
 
-            if print_to_dir is True:
-                print(f'\n*** Printing email to {eml.default_email_dir}\\Export ***')
-                (eml.eml_to_pdf())
+            if write_to_dir is False and send_email is False:
+                logging.info('*** No output generated and no email sent ***')
 
-            if print_to_dir is False and send_email is False:
-                print('\n*** No output generated and no email sent ***')
+            logging.info('------------------------------------------------------')
 
-            print('\n------------------------------------------------------')
+    with open('lastrun.log') as log:
+        for line in log:
+            # if not line.strip():
+            #     continue
+
+            stripped_line = line.strip()
+            line_list = stripped_line.split()
+
+            if 'INFO' in line_list:
+
+                print(" ".join(line_list[1:None]))
+
+    append_log()
+
+
+def logger(log_level):
+    logging.basicConfig(format='%(asctime)s  %(levelname)-8s %(message)s',
+                        level=log_level,
+                        datefmt='%m-%d %H:%M',
+                        filename=r'lastrun.log',
+                        filemode='w')
+    logging.getLogger("weasyprint").setLevel(logging.CRITICAL)
+    logging.getLogger("fontTools.subset").setLevel(logging.CRITICAL)
+    logging.getLogger("fontTools.ttLib.ttFont").setLevel(logging.CRITICAL)
+    logging.getLogger("PIL.PngImagePlugin").setLevel(logging.CRITICAL)
+
+
+def append_log():
+    with open('lastrun.log') as log:
+        log_data = log.read()
+
+    with open('Mailer.log', 'a') as log:
+        log.write(log_data)
+        log.write('                         ======= END OF RUN =======                  \n')
 
 
 def main():
+
     notify()
+
 
 
 if __name__ == '__main__':
