@@ -48,8 +48,8 @@ class Mailer:
             self.default_attachments_dir = os.path.join(self.default_attachments_dir, self.directory)
             self.default_images_dir = os.path.join(self.default_images_dir, self.directory)
             self.default_email_dir = os.path.join(self.default_email_dir, self.directory)
-            logging.info(f'---Using folder, "{os.path.join(self.default_email_dir,self.directory)}"'
-                         f', for email body, embedded images and attachments---')
+            logging.info(f'*** Using folder, "{self.directory}"'
+                         f', for email body, embedded images and attachments ***')
 
             return self.default_email_dir, self.default_images_dir, self.default_attachments_dir
 
@@ -67,11 +67,13 @@ class Mailer:
         with open(os.path.join(self.default_email_dir, email_html), encoding='utf-8') as f:
             body_txt = f.read()
             formatted = body_txt
-            logging.info(f'*** Reading HTML file, "{self.default_email_dir}\\email.html", into email body... ***')
-            logging.info(f"TO: {self.to_email} "
-                         f"FROM: {self.from_email_address} "
-                         f"CC: {self.carbon_copy}"
-                          )
+            if self.directory =='':
+                logging.info(f'*** Reading HTML file, "{self.default_email_dir}\\email.html", into email body... ***')
+            else:
+                logging.info(f'*** Reading HTML file, "{self.default_email_dir}\\{self.directory}.html", into email body... ***')
+            logging.info(f"TO: {self.to_email} ")
+            logging.info(f"FROM: {self.from_email_address} ")
+            logging.info(f"CC: {self.carbon_copy} ")
 
             for item in kwargs:
                 f_item = '{'+item+'}'
@@ -83,7 +85,7 @@ class Mailer:
             logging.debug(f'Email body .HTML:\n{formatted}\n')
             msg['Subject'] = self.subject
             msg.attach(MIMEText(formatted, 'html'))
-            logging.info(f'  SUBJECT: {self.subject}')
+            logging.info(f'SUBJECT: {self.subject} ')
             self.msg = msg
 
             return msg
@@ -105,6 +107,7 @@ class Mailer:
     def embed_pics(self):
         i = 0
         pic_list = self.sort_pics()
+        logging.info(f"*** Embedding images from {self.default_images_dir} ***")
         for file in pic_list:
             with open(os.path.join(self.default_images_dir, file), 'rb') as img:
                 image = MIMEImage(img.read())
@@ -271,8 +274,7 @@ def notify(send_email=True, write_to_dir=False, attach_email_as_pdf=False, log_l
                 logging.info(f'*** Sending email to {csv_row["first_name"].upper().strip()} '
                              f'{csv_row["last_name"].upper().strip()} '
                              f'<{csv_row["to_email"].lower().strip()}> ***'
-
-                      )
+                             )
                 eml.send_mail()
 
             if write_to_dir is False and send_email is False:
@@ -319,7 +321,6 @@ def append_log():
 def main():
 
     notify()
-
 
 
 if __name__ == '__main__':
