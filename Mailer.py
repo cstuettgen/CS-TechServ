@@ -148,6 +148,8 @@ class Mailer:
                 logging.info(f'      ATTACHMENTS: {attachment.get_filename()}')
 
     def send_mail(self):
+        if self.directory == 'log':
+            logging.info(f'*** Sending log file to {self.from_email_address}')
 
         with smtplib.SMTP('smtp.office365.com', 587) as smtp:
             smtp.ehlo()
@@ -173,15 +175,11 @@ class Mailer:
                 if os.path.dirname(fp):
                     os.makedirs(os.path.dirname(fp), exist_ok=True)
                 temp.append(p)
-
         with open(fp, 'wb') as html:
             html.write(temp[0].get_payload(decode=True))
-
         pic_list = self.sort_pics()
-
         with open(fp, encoding='utf-8') as html:
             pic_replacement = html.read()
-
         for pic in pic_list:
             src = f'cid:image{pic_list.index(pic)}'
             if self.directory == '':
@@ -189,7 +187,6 @@ class Mailer:
                                     os.listdir(self.default_images_dir)[pic_list.index(pic)]
                                     )
                 pic_replacement = pic_replacement.replace(src, swap)
-
             else:
                 swap = os.path.join('..\\..\\..\\' + self.default_images_dir,
                                     os.listdir(self.default_images_dir)[pic_list.index(pic)]
@@ -223,22 +220,18 @@ class Mailer:
             output_path = os.path.join(self.default_attachments_dir, f'{self.directory}.export.pdf')
             source_path = os.path.join(self.default_email_dir, f'Export\\{self.directory}.export.pdf')
             file = f'{self.directory}.export.pdf'
-
         if write_to_dir is True:
             shutil.copyfile(source_path, output_path)
-
         else:
             self.eml_to_pdf()
             shutil.copyfile(source_path, output_path)
         attachment = MIMEApplication(open(output_path, 'rb').read())
         attachment.add_header('Content-Disposition', 'attachment', filename=file)
-        self.msg.attach(attachment)
-
-        logging.info('*** Attaching copy of email body as PDF ***')
+        self.msg.attach(attachment)        
         os.remove(output_path)
+        logging.info('*** Attaching copy of email body as PDF ***')
 
-
-def notify(send_email=True, write_to_dir=False, attach_email_as_pdf=False, log_level=logging.INFO, send_log=False):
+def notify(send_email=True, write_to_dir=False, attach_email_as_pdf=False, log_level=20, send_log=False):
     logger(log_level)
 
     from_email_address = None
@@ -264,7 +257,6 @@ def notify(send_email=True, write_to_dir=False, attach_email_as_pdf=False, log_l
         header = next(csv_reader)
 
         for row in csv_reader:
-
             logging.debug(f'recipients.csv:\n{header}\n{row}')
 
             i = 0
@@ -272,55 +264,40 @@ def notify(send_email=True, write_to_dir=False, attach_email_as_pdf=False, log_l
             for column in header:
                 csv_row.update({column.split()[0]: row[i]})
                 i += 1
-
             eml = Mailer(from_email_address, smtp_password, **csv_row)
-
+            
             if write_to_dir is True:
-
                 pdf_path = eml.eml_to_pdf()
-
                 logging.info(f'*** Email saved to {pdf_path} ***')
-
             if attach_email_as_pdf is True:
                 if send_email is False:
                     logging.info(' !======!     SEND EMAIL NOT SELECTED!    !======!')
                 else:
                     eml.attach_pdf(write_to_dir)
-
             if send_email is True:
                 logging.info(f'*** Sending email to {csv_row["first_name"].upper().strip()} '
                              f'{csv_row["last_name"].upper().strip()} '
                              f'<{csv_row["to_email"].lower().strip()}> ***'
                              )
                 eml.send_mail()
-
             if write_to_dir is False and send_email is False:
-                logging.info('*** No output generated and no email sent ***')
-
-            logging.info('------------------------------------------------------')
-
-    with open('lastrun.log') as log:
-        for line in log:
-
-            stripped_line = line.strip()
-            line_list = stripped_line.split()
-
-            if 'INFO' in line_list:
-
-                print(" ".join(line_list[1:None]))
-
+                logging.info('*** No output generated and no email sent ***')           
     if send_log is True:
         log_mail(from_email_address, smtp_password)
-
+    with open('lastrun.log') as log:
+        for line in log:
+            stripped_line = line.strip()
+            line_list = stripped_line.split()
+            if 'INFO' in line_list:
+                print(" ".join(line_list[1:None]))              
+    logging.info('------------------------------------------------------')
     append_log()
 
 
 def log_mail(from_email_address,smtp_password):
     kwargs = {'first_name': 'MAILER', 'last_name': 'LOG', 'to_email': from_email_address,
               'carbon_copy': '', 'subject': 'MAILER: Log from last run', 'directory': 'log'}
-
     mail = Mailer(from_email_address, smtp_password, **kwargs)
-
     mail.send_mail()
 
 
@@ -339,14 +316,12 @@ def logger(log_level):
 def append_log():
     with open('lastrun.log') as log:
         log_data = log.read()
-
     with open('Mailer.log', 'a') as log:
         log.write(log_data)
         log.write('                         ======= END OF RUN =======                  \n')
 
 
 def main():
-
     notify()
 
 
