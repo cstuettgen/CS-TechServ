@@ -13,25 +13,41 @@ import logging
 
 class Mailer:
     def __init__(self, from_email_address, smtp_password, **kwargs):
+        self.from_email_address = from_email_address
+        self.smtp_password = smtp_password
+        self.directory = kwargs['directory']
         self.first_name = kwargs['first_name']
         self.last_name = kwargs['last_name']
         self.to_email = kwargs['to_email']
         self.carbon_copy = kwargs['carbon_copy']
         self.subject = kwargs['subject']
-        self.directory = kwargs['directory']
         self.msg = None
-        self.from_email_address = from_email_address
-        self.smtp_password = smtp_password
-        self.default_email_dir = 'Email_Message\\'
-        self.default_attachments_dir = 'Attachments\\'
-        self.default_images_dir = 'Images\\'
-        self.default_dirs = self.set_dirs()
-        self.mime_body = self.compose_mail(**kwargs)
-        self.mime_pics = self.embed_pics()
-        self.mime_attachments = self.attachments()
+        if self.directory != 'log':
+            self.default_email_dir = 'Email_Message\\'
+            self.default_attachments_dir = 'Attachments\\'
+            self.default_images_dir = 'Images\\'
+            self.set_dirs()
+            self.compose_mail(**kwargs)
+            self.embed_pics()
+            self.attachments()
+        else:
+            self.log()
+
+    def log(self):
+
+        if self.directory == 'log':
+            msg = MIMEMultipart('related')
+            msg['From'] = self.from_email_address
+            msg['To'] = self.to_email
+            msg['cc'] = self.carbon_copy
+            msg['Subject'] = self.subject
+            msg.attach(MIMEText("Log"))
+            attachment = MIMEApplication(open('lastrun.log', 'rb').read())
+            attachment.add_header('Content-Disposition', 'attachment', filename='Mailer.log')
+            msg.attach(attachment)
+            self.msg = msg
 
     def set_dirs(self):
-
         if self.directory == '':
             logging.info(f'*** Using default folders for email body, embedded images and attachments ***')
 
@@ -50,8 +66,6 @@ class Mailer:
             self.default_email_dir = os.path.join(self.default_email_dir, self.directory)
             logging.info(f'*** Using folder, "{self.directory}"'
                          f', for email body, embedded images and attachments ***')
-
-            return self.default_email_dir, self.default_images_dir, self.default_attachments_dir
 
     def compose_mail(self, **kwargs):
         msg = MIMEMultipart('related')
@@ -133,9 +147,8 @@ class Mailer:
                 self.msg.attach(attachment)
                 logging.info(f'      ATTACHMENTS: {attachment.get_filename()}')
 
-            return attachments
-
     def send_mail(self):
+
         with smtplib.SMTP('smtp.office365.com', 587) as smtp:
             smtp.ehlo()
             smtp.starttls()
@@ -149,9 +162,7 @@ class Mailer:
         parts = self.msg.get_payload()
 
         for p in parts:
-
             ct = p.get_content_type()
-
             if 'image/jpeg' in ct or 'image/png' in ct:
                 continue
             if 'text/html' in ct and 'Content-Disposition: attachment;' not in ct:
@@ -202,6 +213,8 @@ class Mailer:
         return output_path
 
     def attach_pdf(self, write_to_dir):
+        if self.directory == 'log':
+            pass
         if self.directory == '':
             output_path = os.path.join(self.default_attachments_dir, f'email.export.pdf')
             source_path = os.path.join(self.default_email_dir, f'Export\\email.export.pdf')
@@ -220,11 +233,12 @@ class Mailer:
         attachment = MIMEApplication(open(output_path, 'rb').read())
         attachment.add_header('Content-Disposition', 'attachment', filename=file)
         self.msg.attach(attachment)
+
         logging.info('*** Attaching copy of email body as PDF ***')
         os.remove(output_path)
 
 
-def notify(send_email=True, write_to_dir=False, attach_email_as_pdf=False, log_level=logging.INFO):
+def notify(send_email=True, write_to_dir=False, attach_email_as_pdf=False, log_level=logging.INFO, send_log=False):
     logger(log_level)
 
     from_email_address = None
@@ -287,8 +301,6 @@ def notify(send_email=True, write_to_dir=False, attach_email_as_pdf=False, log_l
 
     with open('lastrun.log') as log:
         for line in log:
-            # if not line.strip():
-            #     continue
 
             stripped_line = line.strip()
             line_list = stripped_line.split()
@@ -297,7 +309,19 @@ def notify(send_email=True, write_to_dir=False, attach_email_as_pdf=False, log_l
 
                 print(" ".join(line_list[1:None]))
 
+    if send_log is True:
+        log_mail(from_email_address, smtp_password)
+
     append_log()
+
+
+def log_mail(from_email_address,smtp_password):
+    kwargs = {'first_name': 'MAILER', 'last_name': 'LOG', 'to_email': from_email_address,
+              'carbon_copy': '', 'subject': 'MAILER: Log from last run', 'directory': 'log'}
+
+    mail = Mailer(from_email_address, smtp_password, **kwargs)
+
+    mail.send_mail()
 
 
 def logger(log_level):
