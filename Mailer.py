@@ -9,6 +9,7 @@ import os
 import csv
 from weasyprint import HTML
 import logging
+from _datetime import datetime
 
 
 class Mailer:
@@ -22,6 +23,7 @@ class Mailer:
         self.carbon_copy = kwargs['carbon_copy']
         self.subject = kwargs['subject']
         self.msg = None
+        self.date = datetime.now().strftime("%Y-%m-%d %H_%M_%S")
         if self.directory != 'log':
             self.default_email_dir = 'Email_Message\\'
             self.default_attachments_dir = 'Attachments\\'
@@ -72,17 +74,21 @@ You're gonna love it, Log! """
             msg['Subject'] = self.subject
             msg.attach(MIMEText(lyrics))
             attachment = MIMEApplication(open('lastrun.log', 'rb').read())
-            attachment.add_header('Content-Disposition', 'attachment', filename='Mailer.log')
+            attachment.add_header('Content-Disposition', 'attachment', filename=f'Mailer-Last_Run-{self.date}.log')
             msg.attach(attachment)
             self.msg = msg
 
     def set_dirs(self):
         if self.directory == '':
+            logging.info('\n')
+            logging.info(f'___________________________Default Directory_________________________________')
             logging.info(f'*** Using default folders for email body, embedded images and attachments ***')
 
         elif (self.directory not in os.listdir(self.default_email_dir)
                 or self.directory not in os.listdir(self.default_images_dir)
                 or self.directory not in os.listdir(self.default_attachments_dir)):
+            logging.info('\n')
+            logging.info(f'___________________________{self.directory}________________________________')
             logging.info(f'*** One or more folders is missing for recipient {self.first_name} {self.last_name}'
                          f' <{self.to_email}> ***')
             exit()
@@ -93,6 +99,8 @@ You're gonna love it, Log! """
             self.default_attachments_dir = os.path.join(self.default_attachments_dir, self.directory)
             self.default_images_dir = os.path.join(self.default_images_dir, self.directory)
             self.default_email_dir = os.path.join(self.default_email_dir, self.directory)
+            logging.info('\n')
+            logging.info(f'___________________________{self.directory}________________________________')
             logging.info(f'*** Using folder, "{self.directory}"'
                          f', for email body, embedded images and attachments ***')
 
@@ -127,7 +135,10 @@ You're gonna love it, Log! """
                 if f_item in formatted:
                     formatted = formatted.replace(f_item, kwargs[item])
 
-            logging.debug(f'Email body .HTML:\n{formatted}\n')
+            logging.debug(f'----------------------- Email body .HTML: ---------------------------'
+                          f'\n{formatted}\n'
+                          f'-------------------------------------------------------------------------------'
+                          f'------------')
 
             msg['Subject'] = self.subject
             msg.attach(MIMEText(formatted, 'html'))
@@ -312,6 +323,7 @@ def notify(send_email=True, write_to_dir=False, attach_email_as_pdf=False, log_l
                 eml.send_mail()
             if write_to_dir is False and send_email is False:
                 logging.info('*** No output generated and no email sent ***')
+    logging.info('                         ======= END OF RUN =======                  \n')
     if send_log is True:
         log_mail(from_email_address, smtp_password)
     with open('lastrun.log') as log:
@@ -320,11 +332,11 @@ def notify(send_email=True, write_to_dir=False, attach_email_as_pdf=False, log_l
             line_list = stripped_line.split()
             if 'INFO' in line_list:
                 print(" ".join(line_list[1:None]))
-    logging.info('------------------------------------------------------')
+
     append_log()
 
 
-def log_mail(from_email_address,smtp_password):
+def log_mail(from_email_address, smtp_password):
     kwargs = {'first_name': 'MAILER', 'last_name': 'LOG', 'to_email': from_email_address,
               'carbon_copy': '', 'subject': 'MAILER: Log from last run', 'directory': 'log'}
     mail = Mailer(from_email_address, smtp_password, **kwargs)
@@ -348,9 +360,8 @@ def append_log():
         log_data = log.read()
     with open('Mailer.log', 'a') as log:
         log.write(log_data)
-        log.write('                         ======= END OF RUN =======                  \n')
-
-
+ 
+ 
 def main():
     notify()
 
