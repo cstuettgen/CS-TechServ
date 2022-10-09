@@ -9,7 +9,7 @@ import os
 import csv
 from weasyprint import HTML
 import logging
-from _datetime import datetime
+from datetime import datetime
 
 
 class Mailer:
