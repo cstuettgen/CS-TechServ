@@ -34,6 +34,35 @@ class Mailer:
             self.log()
 
     def log(self):
+        lyrics = """What rolls down stairs
+
+Alone or in pairs,
+
+Rolls over your neighbor's dog?
+
+What's great for a snack
+
+and fits on your back?
+
+It's Log, Log, Log!
+
+It's Lo-og, Lo-og,
+
+It's big, it's heavy, it's wood.
+
+It's Lo-og, Lo-og,
+
+It's better than bad, it's good!
+
+Everyone wants a Log!
+
+You're gonna love it, Log!
+
+Come on and get your Log!
+
+Everyone needs a Log!
+
+You're gonna love it, Log! """
 
         if self.directory == 'log':
             msg = MIMEMultipart('related')
@@ -41,7 +70,7 @@ class Mailer:
             msg['To'] = self.to_email
             msg['cc'] = self.carbon_copy
             msg['Subject'] = self.subject
-            msg.attach(MIMEText("Log"))
+            msg.attach(MIMEText(lyrics))
             attachment = MIMEApplication(open('lastrun.log', 'rb').read())
             attachment.add_header('Content-Disposition', 'attachment', filename='Mailer.log')
             msg.attach(attachment)
@@ -227,9 +256,10 @@ class Mailer:
             shutil.copyfile(source_path, output_path)
         attachment = MIMEApplication(open(output_path, 'rb').read())
         attachment.add_header('Content-Disposition', 'attachment', filename=file)
-        self.msg.attach(attachment)        
+        self.msg.attach(attachment)
         os.remove(output_path)
         logging.info('*** Attaching copy of email body as PDF ***')
+
 
 def notify(send_email=True, write_to_dir=False, attach_email_as_pdf=False, log_level=20, send_log=False):
     logger(log_level)
@@ -265,7 +295,7 @@ def notify(send_email=True, write_to_dir=False, attach_email_as_pdf=False, log_l
                 csv_row.update({column.split()[0]: row[i]})
                 i += 1
             eml = Mailer(from_email_address, smtp_password, **csv_row)
-            
+
             if write_to_dir is True:
                 pdf_path = eml.eml_to_pdf()
                 logging.info(f'*** Email saved to {pdf_path} ***')
@@ -281,7 +311,7 @@ def notify(send_email=True, write_to_dir=False, attach_email_as_pdf=False, log_l
                              )
                 eml.send_mail()
             if write_to_dir is False and send_email is False:
-                logging.info('*** No output generated and no email sent ***')           
+                logging.info('*** No output generated and no email sent ***')
     if send_log is True:
         log_mail(from_email_address, smtp_password)
     with open('lastrun.log') as log:
@@ -289,7 +319,7 @@ def notify(send_email=True, write_to_dir=False, attach_email_as_pdf=False, log_l
             stripped_line = line.strip()
             line_list = stripped_line.split()
             if 'INFO' in line_list:
-                print(" ".join(line_list[1:None]))              
+                print(" ".join(line_list[1:None]))
     logging.info('------------------------------------------------------')
     append_log()
 
