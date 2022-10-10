@@ -118,11 +118,7 @@ You're gonna love it, Log! """
         with open(os.path.join(self.default_email_dir, email_html), encoding='utf-8') as f:
             body_txt = f.read()
             formatted = body_txt
-            if self.directory == '':
-                logging.info(f'*** Reading HTML file, "{self.default_email_dir}\\email.html", into email body... ***')
-            else:
-                logging.info(f'*** Reading HTML file,'
-                             f' "{self.default_email_dir}\\{self.directory}.html", into email body... ***')
+
             logging.info(f"TO: {self.to_email} ")
             logging.info(f"FROM: {self.from_email_address} ")
             logging.info(f"CC: {self.carbon_copy} ")
@@ -135,14 +131,19 @@ You're gonna love it, Log! """
                 if f_item in formatted:
                     formatted = formatted.replace(f_item, kwargs[item])
 
+            msg['Subject'] = self.subject
+            logging.info(f'SUBJECT: {self.subject}\n')
+            if self.directory == '':
+                logging.info(f'*** Reading HTML file, "{self.default_email_dir}\\email.html", into email body... ***')
+            else:
+                logging.info(f'*** Reading HTML file,'
+                             f' "{self.default_email_dir}\\{self.directory}.html", into email body... ***')
             logging.debug(f'----------------------- Email body .HTML: ---------------------------'
                           f'\n{formatted}\n'
                           f'-------------------------------------------------------------------------------'
                           f'------------')
-
-            msg['Subject'] = self.subject
             msg.attach(MIMEText(formatted, 'html'))
-            logging.info(f'SUBJECT: {self.subject} ')
+
             self.msg = msg
 
             return msg
