@@ -99,7 +99,7 @@ You're gonna love it, Log! """
             self.default_attachments_dir = os.path.join(self.default_attachments_dir, self.directory)
             self.default_images_dir = os.path.join(self.default_images_dir, self.directory)
             self.default_email_dir = os.path.join(self.default_email_dir, self.directory)
-            logging.info('\n')
+            logging.info('')
             logging.info(f'___________________________{self.directory}________________________________')
             logging.info(f'*** Using folder, "{self.directory}"'
                          f', for email body, embedded images and attachments ***')
@@ -324,7 +324,7 @@ def notify(send_email=True, write_to_dir=False, attach_email_as_pdf=False, log_l
                 eml.send_mail()
             if write_to_dir is False and send_email is False:
                 logging.info('*** No output generated and no email sent ***')
-    logging.info('                         ======= END OF RUN =======                  \n')
+    logging.info(' --- - --- - --- - --- - ======= END OF RUN ======= - --- - --- - --- - ---\n')
     if send_log is True:
         log_mail(from_email_address, smtp_password)
 
