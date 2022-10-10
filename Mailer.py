@@ -134,7 +134,7 @@ You're gonna love it, Log! """
             msg['Subject'] = self.subject
             logging.info(f'SUBJECT: {self.subject}\n')
             if self.directory == '':
-                logging.info(f'*** Reading HTML file, "{self.default_email_dir}\\email.html", into email body... ***')
+                logging.info(f'*** Reading HTML file, "{self.default_email_dir}email.html", into email body... ***')
             else:
                 logging.info(f'*** Reading HTML file,'
                              f' "{self.default_email_dir}\\{self.directory}.html", into email body... ***')
@@ -327,12 +327,6 @@ def notify(send_email=True, write_to_dir=False, attach_email_as_pdf=False, log_l
     logging.info('                         ======= END OF RUN =======                  \n')
     if send_log is True:
         log_mail(from_email_address, smtp_password)
-    with open('lastrun.log') as log:
-        for line in log:
-            stripped_line = line.strip()
-            line_list = stripped_line.split()
-            if 'INFO' in line_list:
-                print(" ".join(line_list[1:None]))
 
     append_log()
 
@@ -347,9 +341,16 @@ def log_mail(from_email_address, smtp_password):
 def logger(log_level):
     logging.basicConfig(format='%(asctime)s  %(levelname)-8s %(message)s',
                         level=log_level,
-                        datefmt='%m-%d %H:%M',
+                        datefmt='%Y-%m-%d %H:%M:%S',
                         filename=r'lastrun.log',
-                        filemode='w')
+                        filemode='w',
+                        )
+    console = logging.StreamHandler()
+    console.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(levelname)-8s %(message)s')
+    console.setFormatter(formatter)
+    logging.getLogger().addHandler(console)
+
     logging.getLogger("weasyprint").setLevel(logging.CRITICAL)
     logging.getLogger("fontTools.subset").setLevel(logging.CRITICAL)
     logging.getLogger("fontTools.ttLib.ttFont").setLevel(logging.CRITICAL)
