@@ -360,8 +360,8 @@ def append_log():
         log_data = log.read()
     with open('Mailer.log', 'a') as log:
         log.write(log_data)
- 
- 
+
+
 def main():
     notify()
 
