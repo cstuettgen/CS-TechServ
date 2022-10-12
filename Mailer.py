@@ -40,9 +40,9 @@ class Mailer:
             self.attachments()
         else:
             self.log()
-
+     
     def log(self):
-        with open('lastrun.log',"r") as last_run:
+        with open('lastrun.log', "r") as last_run:
             log_data = last_run.read()
 
         if self.directory == 'log':
@@ -199,6 +199,7 @@ class Mailer:
                 temp.append(p)
         with open(fp, 'wb') as html:
             html.write(temp[0].get_payload(decode=True))
+
         pic_list = self.sort_pics()
         with open(fp, encoding='utf-8') as html:
             pic_replacement = html.read()
@@ -214,6 +215,7 @@ class Mailer:
                                     os.listdir(self.default_images_dir)[pic_list.index(pic)]
                                     )
                 pic_replacement = pic_replacement.replace(src, swap)
+
         logging.info(f'*** Converting Email Body to HTML/PDF ***')
         logging.info(f'   .EML to .HTML: Writing e-mail body to {fp}')
 
@@ -228,8 +230,6 @@ class Mailer:
         logging.info(f'   .HTML to .PDF: Converting body to {output_path}')
 
         HTML(fp).write_pdf(output_path)
-
-        return output_path
 
     def attach_pdf(self, write_to_dir):
         if self.directory == 'log':
@@ -254,11 +254,11 @@ class Mailer:
         logging.info('*** Attaching copy of email body as PDF ***')
 
 
-def notify(send_email=True, write_to_dir=False, attach_email_as_pdf=False, log_level=20,
+def notify(send_email=False, write_to_dir=False, attach_email_as_pdf=False, log_level=20,
            send_log=False, change_creds=False):
 
     logger(log_level)
-    print(get_registry('Mailer.smtp'))
+
     if change_creds is True or get_registry('Mailer.smtp') == '' or get_registry('Mailer.pass') == '':
         creds()
 
