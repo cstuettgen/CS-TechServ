@@ -1,30 +1,36 @@
 import pathlib
 import smtplib
+import sys
+import os
+import csv
+import winreg
+import logging
+import shutil
+import importlib
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
-import shutil
-import os
-import csv
 from weasyprint import HTML
-import logging
 from datetime import datetime
+from PySide6.QtCore import (QMetaObject, QRect)
+from PySide6.QtWidgets import (QApplication, QGroupBox, QLabel, QLineEdit, QPushButton, QMainWindow)
 
 
 class Mailer:
-    def __init__(self, from_email_address, smtp_password, **kwargs):
-        self.from_email_address = from_email_address
-        self.smtp_password = smtp_password
+    def __init__(self, **kwargs):
+        self.from_email_address = get_registry('Mailer.smtp')
+        self.smtp_password = get_registry('Mailer.pass')
         self.directory = kwargs['directory']
         self.first_name = kwargs['first_name']
         self.last_name = kwargs['last_name']
-        self.to_email = kwargs['to_email']
+
         self.carbon_copy = kwargs['carbon_copy']
         self.subject = kwargs['subject']
         self.msg = None
         self.date = datetime.now().strftime("%Y-%m-%d %H_%M_%S")
         if self.directory != 'log':
+            self.to_email = kwargs['to_email']
             self.default_email_dir = 'Email_Message\\'
             self.default_attachments_dir = 'Attachments\\'
             self.default_images_dir = 'Images\\'
@@ -69,7 +75,7 @@ You're gonna love it, Log! """
         if self.directory == 'log':
             msg = MIMEMultipart('related')
             msg['From'] = self.from_email_address
-            msg['To'] = self.to_email
+            msg['To'] = self.from_email_address
             msg['cc'] = self.carbon_copy
             msg['Subject'] = self.subject
             msg.attach(MIMEText(lyrics))
@@ -190,9 +196,10 @@ You're gonna love it, Log! """
 
     def send_mail(self):
         if self.directory == 'log':
-            logging.info(f'*** Sending log file to {self.from_email_address}')
+            logging.info(f'*** Sending log file to {self.from_email_address} ***')
 
         with smtplib.SMTP('smtp.office365.com', 587) as smtp:
+            importlib.reload(os)
             smtp.ehlo()
             smtp.starttls()
             smtp.ehlo()
@@ -273,26 +280,10 @@ You're gonna love it, Log! """
         logging.info('*** Attaching copy of email body as PDF ***')
 
 
-def notify(send_email=True, write_to_dir=False, attach_email_as_pdf=False, log_level=20, send_log=False):
+def notify(send_email=True, write_to_dir=False, attach_email_as_pdf=False, log_level=20,
+           send_log=False, change_creds=False):
+
     logger(log_level)
-
-    from_email_address = None
-    smtp_password = None
-
-    with open('config/credentials.txt') as creds:
-        for line in creds:
-            if not line.strip():
-                continue
-
-            stripped_line = line.strip()
-            line_list = stripped_line.split()
-
-            if line_list[0] == "*":
-                continue
-            if line_list[0] == "Email:":
-                from_email_address = " ".join(line_list[1:None])
-            if line_list[0] == "Password:":
-                smtp_password = ' '.join(line_list[1:None])
 
     with open('config/recipients.csv', 'r') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
@@ -300,41 +291,65 @@ def notify(send_email=True, write_to_dir=False, attach_email_as_pdf=False, log_l
 
         for row in csv_reader:
             logging.debug(f'recipients.csv:\n{header}\n{row}')
-
             i = 0
             csv_row = {}
             for column in header:
                 csv_row.update({column.split()[0]: row[i]})
                 i += 1
-            eml = Mailer(from_email_address, smtp_password, **csv_row)
 
+            eml = Mailer(**csv_row)
+
+            if change_creds is True:
+                creds()
+                change_creds = False
             if write_to_dir is True:
-                pdf_path = eml.eml_to_pdf()
-                logging.info(f'*** Email saved to {pdf_path} ***')
+                save_pdf(eml)
             if attach_email_as_pdf is True:
-                if send_email is False:
-                    logging.info(' !======!     SEND EMAIL NOT SELECTED!    !======!')
-                else:
-                    eml.attach_pdf(write_to_dir)
+                attach(eml, send_email, write_to_dir)
             if send_email is True:
-                logging.info(f'*** Sending email to {csv_row["first_name"].upper().strip()} '
-                             f'{csv_row["last_name"].upper().strip()} '
-                             f'<{csv_row["to_email"].lower().strip()}> ***'
-                             )
-                eml.send_mail()
+                send(eml, csv_row)
             if write_to_dir is False and send_email is False:
                 logging.info('*** No output generated and no email sent ***')
+
     logging.info(' --- - --- - --- - --- - ======= END OF RUN ======= - --- - --- - --- - ---\n')
     if send_log is True:
-        log_mail(from_email_address, smtp_password)
+        log_mail()
 
     append_log()
 
 
-def log_mail(from_email_address, smtp_password):
-    kwargs = {'first_name': 'MAILER', 'last_name': 'LOG', 'to_email': from_email_address,
-              'carbon_copy': '', 'subject': 'MAILER: Log from last run', 'directory': 'log'}
-    mail = Mailer(from_email_address, smtp_password, **kwargs)
+def attach(eml, send_email, write_to_dir):
+    if send_email is False:
+        logging.info(' !======!     SEND EMAIL NOT SELECTED!    !======!')
+    else:
+        eml.attach_pdf(write_to_dir)
+
+
+def send(eml, csv_row):
+    logging.info(f'*** Sending email to {csv_row["first_name"].upper().strip()} '
+                 f'{csv_row["last_name"].upper().strip()} '
+                 f'<{csv_row["to_email"].lower().strip()}> ***'
+                 )
+    eml.send_mail()
+
+
+def save_pdf(eml):
+    pdf_path = eml.eml_to_pdf()
+    logging.info(f'*** Email saved to {pdf_path} ***')
+
+
+def creds():
+    app = QApplication(sys.argv)
+    window = UiForm()
+    window.show()
+    app.exec()
+    app.quit()
+
+
+def log_mail():
+    kwargs = {'first_name': 'MAILER', 'last_name': 'LOG', 'carbon_copy': '',
+              'subject': 'MAILER: Log from last run', 'directory': 'log'}
+    mail = Mailer(**kwargs)
     mail.send_mail()
 
 
@@ -366,6 +381,61 @@ def append_log():
 
 def main():
     notify()
+
+
+def set_registry(keyname, keyvalue, regdir='Environment',):
+    with winreg.CreateKey(winreg.HKEY_CURRENT_USER, regdir) as _:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, regdir, 0, winreg.KEY_WRITE) as writeRegistryDir:
+            winreg.SetValueEx(writeRegistryDir, keyname, 0, winreg.REG_SZ, keyvalue)
+    return f'{regdir}/{keyname} : {keyvalue}'
+
+
+def get_registry(keyname, regdir='Environment'):
+    with winreg.OpenKey(winreg.HKEY_CURRENT_USER, regdir) as accessRegistryDir:
+        value, _ = winreg.QueryValueEx(accessRegistryDir, keyname)
+
+        return value
+
+
+class UiForm(QMainWindow):
+    def __init__(self):
+        super(UiForm, self).__init__()
+        self.resize(500, 400)
+        QMetaObject.connectSlotsByName(self)
+        self.groupbox = QGroupBox(self)
+        self.groupbox.setObjectName(u"groupBox")
+        self.groupbox.setGeometry(QRect(10, 20, 321, 181))
+        self.username = QLineEdit(self.groupbox)
+        self.username.setObjectName(u"username")
+        self.username.setGeometry(QRect(10, 40, 301, 22))
+        self.password = QLineEdit(self.groupbox)
+        self.password.setObjectName(u"password")
+        self.password.setGeometry(QRect(10, 110, 301, 22))
+        self.label = QLabel(self.groupbox)
+        self.label.setObjectName(u"label")
+        self.label.setGeometry(QRect(10, 20, 161, 16))
+        self.label_2 = QLabel(self.groupbox)
+        self.label_2.setObjectName(u"label_2")
+        self.label_2.setGeometry(QRect(10, 90, 49, 16))
+        self.pushbutton = QPushButton(self)
+        self.pushbutton.setObjectName(u"pushButton")
+        self.pushbutton.setGeometry(QRect(140, 220, 75, 24))
+        self.setWindowTitle("Set SMTP Credentials")
+        self.groupbox.setTitle("SMTP Credentials:")
+        self.label.setText("Username:")
+        self.label_2.setText("Password:")
+        self.pushbutton.setText("OK")
+        self.pushbutton.clicked.connect(self.click)
+
+    def click(self):
+        logging.info('*** Storing credentials ***\n')
+        username = set_registry('Mailer.smtp', self.username.text())
+        logging.info(f'SMTP Username, {username}, set')
+        set_registry('Mailer.pass', self.password.text())
+        logging.info(f'SMTP Password set')
+        logging.info('*** Credentials stored ***')
+
+        self.close()
 
 
 if __name__ == '__main__':
