@@ -148,6 +148,7 @@ You're gonna love it, Log! """
                           f'\n{formatted}\n'
                           f'-------------------------------------------------------------------------------'
                           f'------------')
+            logging.info('      Attaching Message')
             msg.attach(MIMEText(formatted, 'html'))
 
             self.msg = msg
@@ -240,7 +241,7 @@ You're gonna love it, Log! """
                                     os.listdir(self.default_images_dir)[pic_list.index(pic)]
                                     )
                 pic_replacement = pic_replacement.replace(src, swap)
-
+        logging.info(f'*** Converting Email Body to HTML/PDF ***')
         logging.info(f'   .EML to .HTML: Writing e-mail body to {fp}')
 
         with open(fp, 'w', encoding='utf-8') as html:
@@ -387,7 +388,7 @@ def set_registry(keyname, keyvalue, regdir='Environment',):
     with winreg.CreateKey(winreg.HKEY_CURRENT_USER, regdir) as _:
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, regdir, 0, winreg.KEY_WRITE) as writeRegistryDir:
             winreg.SetValueEx(writeRegistryDir, keyname, 0, winreg.REG_SZ, keyvalue)
-    return f'{regdir}/{keyname} : {keyvalue}'
+    return f'HKCU/{regdir}/{keyname}/', keyvalue
 
 
 def get_registry(keyname, regdir='Environment'):
@@ -428,13 +429,11 @@ class UiForm(QMainWindow):
         self.pushbutton.clicked.connect(self.click)
 
     def click(self):
-        logging.info('*** Storing credentials ***\n')
+        logging.info('*** Storing credentials ***')
         username = set_registry('Mailer.smtp', self.username.text())
-        logging.info(f'SMTP Username, {username}, set')
-        set_registry('Mailer.pass', self.password.text())
-        logging.info(f'SMTP Password set')
-        logging.info('*** Credentials stored ***')
-
+        logging.info(f'SMTP Username, {username[0]} [{username[1]}], set')
+        password = set_registry('Mailer.pass', self.password.text())
+        logging.info(f'SMTP Password, {password[0]} [***********], set\n')
         self.close()
 
 
