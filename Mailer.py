@@ -42,35 +42,8 @@ class Mailer:
             self.log()
 
     def log(self):
-        lyrics = """What rolls down stairs
-
-Alone or in pairs,
-
-Rolls over your neighbor's dog?
-
-What's great for a snack
-
-and fits on your back?
-
-It's Log, Log, Log!
-
-It's Lo-og, Lo-og,
-
-It's big, it's heavy, it's wood.
-
-It's Lo-og, Lo-og,
-
-It's better than bad, it's good!
-
-Everyone wants a Log!
-
-You're gonna love it, Log!
-
-Come on and get your Log!
-
-Everyone needs a Log!
-
-You're gonna love it, Log! """
+        with open('lastrun.log',"r") as last_run:
+            log_data = last_run.read()
 
         if self.directory == 'log':
             msg = MIMEMultipart('related')
@@ -78,7 +51,7 @@ You're gonna love it, Log! """
             msg['To'] = self.from_email_address
             msg['cc'] = self.carbon_copy
             msg['Subject'] = self.subject
-            msg.attach(MIMEText(lyrics))
+            msg.attach(MIMEText(log_data))
             attachment = MIMEApplication(open('lastrun.log', 'rb').read())
             attachment.add_header('Content-Disposition', 'attachment', filename=f'Mailer-Last_Run-{self.date}.log')
             msg.attach(attachment)
@@ -312,7 +285,7 @@ def notify(send_email=True, write_to_dir=False, attach_email_as_pdf=False, log_l
             if write_to_dir is False and send_email is False:
                 logging.info('*** No output generated and no email sent ***')
 
-    logging.info(' --- - --- - --- - --- - ======= END OF RUN ======= - --- - --- - --- - ---\n')
+    logging.info('\n\n --- - --- - --- - --- - ======= END OF RUN ======= - --- - --- - --- - ---\n')
     if send_log is True:
         log_mail()
 
