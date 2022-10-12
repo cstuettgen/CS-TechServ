@@ -285,6 +285,9 @@ def notify(send_email=True, write_to_dir=False, attach_email_as_pdf=False, log_l
            send_log=False, change_creds=False):
 
     logger(log_level)
+    print(get_registry('Mailer.smtp'))
+    if change_creds is True or get_registry('Mailer.smtp') == '' or get_registry('Mailer.pass') == '':
+        creds()
 
     with open('config/recipients.csv', 'r') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
@@ -300,9 +303,6 @@ def notify(send_email=True, write_to_dir=False, attach_email_as_pdf=False, log_l
 
             eml = Mailer(**csv_row)
 
-            if change_creds is True:
-                creds()
-                change_creds = False
             if write_to_dir is True:
                 save_pdf(eml)
             if attach_email_as_pdf is True:
@@ -392,10 +392,13 @@ def set_registry(keyname, keyvalue, regdir='Environment',):
 
 
 def get_registry(keyname, regdir='Environment'):
-    with winreg.OpenKey(winreg.HKEY_CURRENT_USER, regdir) as accessRegistryDir:
-        value, _ = winreg.QueryValueEx(accessRegistryDir, keyname)
-
-        return value
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, regdir) as accessRegistryDir:
+            value, _ = winreg.QueryValueEx(accessRegistryDir, keyname)
+    except FileNotFoundError:
+        set_registry(keyname, '')
+        value = get_registry(keyname)
+    return value
 
 
 class UiForm(QMainWindow):
@@ -411,6 +414,7 @@ class UiForm(QMainWindow):
         self.username.setGeometry(QRect(10, 40, 301, 22))
         self.password = QLineEdit(self.groupbox)
         self.password.setObjectName(u"password")
+        self.password.setEchoMode(QLineEdit.Password)
         self.password.setGeometry(QRect(10, 110, 301, 22))
         self.label = QLabel(self.groupbox)
         self.label.setObjectName(u"label")
